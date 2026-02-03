@@ -1,60 +1,41 @@
-//
-//  ContentView.swift
-//  EatOrNahh
-//
-//  Created by snehit vaddi on 02/02/26.
-//
-
 import SwiftUI
 import SwiftData
 
 struct ContentView: View {
     @Environment(\.modelContext) private var modelContext
-    @Query private var items: [Item]
+    @Query private var profiles: [UserProfile]
+    @State private var appState = AppState()
 
     var body: some View {
-        NavigationSplitView {
-            List {
-                ForEach(items) { item in
-                    NavigationLink {
-                        Text("Item at \(item.timestamp, format: Date.FormatStyle(date: .numeric, time: .standard))")
-                    } label: {
-                        Text(item.timestamp, format: Date.FormatStyle(date: .numeric, time: .standard))
-                    }
+        Group {
+            if appState.hasCompletedOnboarding {
+                NavigationStack(path: $appState.navigationPath) {
+                    HomeView()
+                        .navigationDestination(for: AppState.Route.self) { route in
+                            switch route {
+                            case .home:
+                                HomeView()
+                            case .menuUpload:
+                                MenuUploadView()
+                            case .conversation(let sessionID):
+                                ConversationView(sessionID: sessionID)
+                            case .voiceMode(let sessionID):
+                                VoiceModeView(sessionID: sessionID)
+                            case .dishDetail(let menuItemID):
+                                DishCardExpandedView(menuItemID: menuItemID)
+                            case .profile:
+                                ProfileView()
+                            }
+                        }
                 }
-                .onDelete(perform: deleteItems)
+            } else {
+                OnboardingContainerView()
             }
-#if os(macOS)
-            .navigationSplitViewColumnWidth(min: 180, ideal: 200)
-#endif
-            .toolbar {
-#if os(iOS)
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    EditButton()
-                }
-#endif
-                ToolbarItem {
-                    Button(action: addItem) {
-                        Label("Add Item", systemImage: "plus")
-                    }
-                }
-            }
-        } detail: {
-            Text("Select an item")
         }
-    }
-
-    private func addItem() {
-        withAnimation {
-            let newItem = Item(timestamp: Date())
-            modelContext.insert(newItem)
-        }
-    }
-
-    private func deleteItems(offsets: IndexSet) {
-        withAnimation {
-            for index in offsets {
-                modelContext.delete(items[index])
+        .environment(appState)
+        .onAppear {
+            if let profile = profiles.first {
+                appState.hasCompletedOnboarding = profile.hasCompletedOnboarding
             }
         }
     }
@@ -62,5 +43,12 @@ struct ContentView: View {
 
 #Preview {
     ContentView()
-        .modelContainer(for: Item.self, inMemory: true)
+        .modelContainer(for: [
+            UserProfile.self,
+            CuisinePreference.self,
+            MenuSession.self,
+            MenuItem.self,
+            ConversationMessage.self,
+            SavedDish.self,
+        ], inMemory: true)
 }

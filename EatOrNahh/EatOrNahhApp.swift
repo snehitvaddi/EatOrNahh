@@ -1,10 +1,3 @@
-//
-//  EatOrNahhApp.swift
-//  EatOrNahh
-//
-//  Created by snehit vaddi on 02/02/26.
-//
-
 import SwiftUI
 import SwiftData
 
@@ -12,12 +5,16 @@ import SwiftData
 struct EatOrNahhApp: App {
     var sharedModelContainer: ModelContainer = {
         let schema = Schema([
-            Item.self,
+            UserProfile.self,
+            CuisinePreference.self,
+            MenuSession.self,
+            MenuItem.self,
+            ConversationMessage.self,
+            SavedDish.self,
         ])
-        let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
-
+        let config = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
         do {
-            return try ModelContainer(for: schema, configurations: [modelConfiguration])
+            return try ModelContainer(for: schema, configurations: [config])
         } catch {
             fatalError("Could not create ModelContainer: \(error)")
         }
